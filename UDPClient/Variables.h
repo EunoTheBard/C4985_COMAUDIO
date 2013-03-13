@@ -3,7 +3,6 @@
 #define VARIABLES_H_
 
 WNDPROC OrgTrackProc;
-static TCHAR szClassName[] = TEXT("UDP Client");
 static HWND hTab = NULL;
 static HWND hStatic = NULL;
 static HWND hPage0 = NULL;
