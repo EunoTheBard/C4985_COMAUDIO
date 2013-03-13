@@ -23,19 +23,9 @@
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
 
-#include <windows.h>
-#include <stdlib.h>
-#include <WinSock2.h>
-#include <stdio.h>
-#include <string.h>
-#include <cstring>
 
-#include "resource.h"
-#include "header.h"
+#include "Header.h"
 
 
 #pragma comment(lib, "Ws2_32.lib")
@@ -62,7 +52,7 @@ struct	sockaddr_in server, client;
 --
 ----------------------------------------------------------------------------------------------------------------------*/
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int iCmdShow) {
-	static char szAppName[] = "UDP Server";
+	static char szAppName[] = "Comm Audio - Server";
 
 	MSG         msg;
 	WNDCLASSEX  wndclass;
@@ -140,7 +130,6 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 	WORD		wVersionRequested;  
 	RECT		client;
 	int			height;
-	static int prevMode = ID_CLIENT_SERVER, prevType = ID_PROTOCOL_UDP, prevNum = ID_NUMBEROFPACKETS_10, prevSize = ID_SIZEOFPACKETS_8192;
 
 	switch ( iMsg ) {
 	case WM_CREATE:
@@ -181,6 +170,18 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT iMsg, WPARAM wParam, LPARAM lParam) {
 		case ID_BUTTON_CONNECT:
 			CreateThread( NULL, 0, Connect, 0, 0, NULL );
 			bConnected = 1;
+			SendMessage( hwnd, WM_SIZE, 0, 0 );
+			break;
+
+		case ID_CLIENT_CLIENT:
+			SetWindowText( hwnd, "Comm Audio - Client" );
+			bServer = 0;
+			SendMessage( hwnd, WM_SIZE, 0, 0 );
+			break;
+
+		case ID_CLIENT_SERVER:
+			SetWindowText( hwnd, "Comm Audio - Server" );
+			bServer = 1;
 			SendMessage( hwnd, WM_SIZE, 0, 0 );
 			break;
 			
@@ -256,9 +257,6 @@ DWORD WINAPI Connect ( LPVOID lpParam ) {
 	char	*host;
 	int		port;
 	int		client_len;
-	int		bTest = 0;
-
-	struct	hostent	*hp;
 
 	SOCKET		sd;
 
@@ -282,149 +280,16 @@ DWORD WINAPI Connect ( LPVOID lpParam ) {
 	server.sin_family = AF_INET;
 	server.sin_port = htons(port);
 
-
-	//-- CLIENT SIDE
 	if( bServer == 0 ) {
-		char buffer[BUFFSIZE], *first, *second;
-		LPSOCKET_INFORMATION SI;
-		int n;
-		HANDLE hFile;
-		DWORD SendBytes, bytesWritten;
-
-		struct linger so_linger;
-		so_linger.l_onoff = TRUE;
-		so_linger.l_linger = 3000;
-
-		if( ( hp = gethostbyname(host) ) == NULL ) {
-			fatal ( "Unknown server address." );
-			return -1;
-		}
-
-		memcpy((char *)&server.sin_addr, hp->h_addr, hp->h_length);
-
-		if (connect (sd, (struct sockaddr *)&server, sizeof(server)) == -1) {
-			fatal( "Cannot connect to server." );
-			return -1;
-		}
-
-		//------------------------------------//
-
-
-		GetWindowText(hReturn, buffer, BUFFSIZE);
-		SetWindowText( hReturn, "" );		
-
-		first = strtok( buffer, " " );
-		if( first == NULL ) {
-			fatal( "Invalid input. Usage <COMMAND> <PARAM> Eg. send text.txt -- Send for the file 'text.txt'" );
-			return -1;
-		}
-
-		if( strcmp( first, "send" ) == 0 ) {
-			second = strtok( NULL, " " );
-			if( second == NULL ) {
-				fatal( "Invalid input. Usage send filename" );
-				return -1;
-			}
-		} else if ( strcmp( first, "test" ) == 0 ) {
-			bTest = 1;
-		} else {
-			fatal( "Invalid input. Usage <COMMAND> <PARAM>" );
-			return -2;
-		}
-
-			if( setsockopt( sd, SOL_SOCKET, SO_LINGER,(const char *) &so_linger, sizeof( so_linger ) ) == -1 ) {
-				fatal( "Failure on setsockopt." );
-				return -3;
-			}
-
-
-		if( ( SI = ( LPSOCKET_INFORMATION ) GlobalAlloc( GPTR, sizeof( SOCKET_INFORMATION ) ) ) == NULL ) {
-			fatal ( "WSAWaitForMultipleEvents failed." );
-			return -1;
-		} 
-
-		SI->Socket			= sd;
-		ZeroMemory( &( SI->Overlapped ), sizeof( WSAOVERLAPPED ) );  
-		SI->BytesSEND		= 0;
-		SI->BytesRECV		= 0;
-		SI->DataBuf.len		= sizeofPackets;
-		SI->DataBuf.buf		= SI->Buffer;
-
-		/*Sending a file. */
-		if( bTest == 0 ) {
-			hFile = CreateFile( second, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL , NULL );
-
-			if( hFile == INVALID_HANDLE_VALUE ) {
-				fatal( "Cannot open file. Please make sure your file name is correct." );
-				return -2;
-			}
-
-
-			DWORD dwHigh, dwLow, bytesRead;
-			dwLow = GetFileSize( hFile, &dwHigh );
-
-
-			while( dwLow > 0 )  {
-
-				memset((char *)&SI->Buffer, 0, sizeof(SI->Buffer));
-
-				/* Read DATA_BUFSIZE -1 into our Buffer. */
-				ReadFile( hFile, SI->Buffer, sizeofPackets - 1, &bytesRead, NULL );
-
-				if (WSASend(SI->Socket, &(SI->DataBuf), 1, &SendBytes, 0, &(SI->Overlapped), NULL) == SOCKET_ERROR) {
-					if (WSAGetLastError() != WSA_IO_PENDING) {
-						non_fatal( "UDP:WSASend failed." );
-						CloseHandle( hFile );
-						return -2;
-					}
-				}
-
-				/* If we are at the last packet, break. */
-				if( dwLow < ( sizeofPackets - 1 ) ) {
-					non_fatal( "Done sending." );
-					break;
-				}
-
-				dwLow -= ( sizeofPackets - 1 );
-			}
-			CloseHandle( hFile );
-		} else {
-
-			for(int i = 0; i < numberOfPackets; i++ ) {
-				memset((char *)&SI->Buffer, 'A' + i % 26, sizeofPackets);
-				if( i == numberOfPackets - 1 ) {
-					SI->Buffer[ sizeofPackets - 2 ] = 0;
-				}
-				if (WSASend(SI->Socket, &(SI->DataBuf), 1, &SendBytes, 0, &(SI->Overlapped), NULL) == SOCKET_ERROR) {
-					if (WSAGetLastError() != WSA_IO_PENDING) {
-						non_fatal( "TCP:WSASend failed." );
-						CloseHandle( hFile );
-						return -2;
-					}
-				}
-			}
-
-			non_fatal( "Done sending." );
-		}
-
-
-		stopTimer();
-		closesocket (sd);
-		fatal( "Done sending." );
-
-
-		//-- CLIENT SIDE --- ///
+		ClientSetup( host, server, sd );
 	} else {
-
-		// --------------------------------- SERVER SIDE -- //
 		server.sin_addr.s_addr = htonl(INADDR_ANY);
 		if( bind(sd, (struct sockaddr *)&server, sizeof(server)) == SOCKET_ERROR ) {
 			fatal ( "Cannot bind name to socket." );
 			return -1;
 		}
 
-		if( bTCP )
-			listen( sd, 5 );
+		listen( sd, 5 );
 
 		stopTimer();
 
@@ -489,13 +354,8 @@ DWORD WINAPI AcceptThread( LPVOID lp ) {
 		SocketInfo->DataBuf.buf		= SocketInfo->Buffer;
 
 		Flags = 0;
-		/*  WSARecv with a WorkerRoutine. */
-		if( WSARecv( SocketInfo->Socket, &( SocketInfo->DataBuf ), 1, &RecvBytes, &Flags, &( SocketInfo->Overlapped ), TCPRoutine ) == SOCKET_ERROR ) {
-			if( WSAGetLastError() != WSA_IO_PENDING ) {
-				fatal ( "TCP:WSARecv failed." );
-				return -1;
-			}
-		}
+		/*Send the file. */
+		//SendFile( "sendMe.txt", SocketInfo );
 	}
 }
 
