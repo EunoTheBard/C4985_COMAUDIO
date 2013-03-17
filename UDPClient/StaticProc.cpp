@@ -2,132 +2,161 @@
 #include "Variables.h"
 #include "resource.h"
 #include "Func.h"
+//#include "Shared.h"
+//#include "Player.h"
 
-
-LRESULT CALLBACK StaticProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp){
-	 
-	RECT rc, rc2; 
-	int x, y, i;
-	
-	switch (msg) { 
-		case ID_STATIC:
-			// background bmp
-			lpPixel = bmptoDIB("480127.bmp", &bmpInfo);
-			iWidth = bmpInfo.bmiHeader.biWidth;
-			iHeight = bmpInfo.bmiHeader.biHeight;
-
-			// get Window's device context handle
-			hdc = GetDC( hwnd );
-			hBmp = CreateCompatibleBitmap(hdc, iWidth, iHeight);
-			// make memory device context
-			hdc_mem = CreateCompatibleDC(hdc);
-			// select bitmap which is loaded 
-			SelectObject( hdc_mem, hBmp );
-
-			DeleteObject(hBmp);
-		
-			ReleaseDC(hwnd, hdc);
-
-			// create pen
-			hPenL = CreatePen(PS_SOLID, 1, RGB(255,255,0)); // 
-			hPenR = CreatePen(PS_SOLID, 1, RGB(0,255,255)); // 
-
-			// initialize a coordinate for wave
-			for(i = 0; i< sizeof(ptWaveL)/sizeof(ptWaveL[0]); i++)
-			{
-				ptWaveL[i].x = 10+i;
-				ptWaveL[i].y = -10;
-
-				ptWaveR[i].x = 10+i;
-				ptWaveR[i].y = -10;
-			}
-
-			// change background mode
-			SetBkMode(hdc_mem, TRANSPARENT);
-
-			hFont[0] = CreateFont(18, 0, 0, 0, FW_BOLD, TRUE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH | FF_DONTCARE, "Times New Roman");
-			hFont[1] = CreateFont(24, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH | FF_DONTCARE, "Arial Black");
-			hFont[2] = CreateFont(12, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY, VARIABLE_PITCH | FF_DONTCARE, "Times New Roman");
-			
-			// initialize MMTIME
-			mmTime.wType = TIME_BYTES;
-
-			// store an initial value for volume and show the volume
-			waveOutGetVolume(hWaveOut, &dwVolStart);
-			wVolNow = LOWORD(dwVolStart);
-			wsprintf(strVol, "%03d/128", (wVolNow +1)/512);
-
-			// show state
-			wsprintf(strState, "NoData");
-
-
-			break;
-		case WM_PAINT:
-	
-			nPage = TabCtrl_GetCurSel(hTab); 
-			GetClientRect(hwnd, &rc);
-			
-			switch (nPage){ 
-				case 0: 
-					// SetBkMode(hdc, TRANSPARENT);
-					hdc = BeginPaint(hwnd, &ps); 
-
-					StretchDIBits(hdc_mem, 0, 0, iWidth, iHeight, 0, 0, iWidth, iHeight, lpPixel, &bmpInfo, DIB_RGB_COLORS, SRCCOPY);
-
-					/////////////////////////////////////////
-					SelectObject(hdc_mem, hFont[2]);
-					SetTextColor(hdc_mem, RGB(255, 255, 0)); 
-				
-					DrawText(hdc_mem, strFile, (int)strlen(strFile), &rcMove, DT_SINGLELINE | DT_VCENTER);
-					DrawText(hdc_mem,strTime, (int)strlen(strTime), &rcInfo[1], DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-					DrawText(hdc_mem, strVol, (int)strlen(strVol), &rcInfo[2], DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-					DrawText(hdc_mem, strState, (int)strlen(strState), &rcInfo[3], DT_SINGLELINE | DT_CENTER | DT_VCENTER);
-
-					SelectObject(hdc_mem, hPenR);
-					Polyline(hdc_mem, ptWaveR, sizeof(ptWaveR)/sizeof(ptWaveR[0]));
-
-					SelectObject(hdc_mem, hPenL);
-					Polyline(hdc_mem, ptWaveL, sizeof(ptWaveL)/sizeof(ptWaveL[0]));
-
-					// measure when strFile is over limitation
-					StretchDIBits(hdc_mem, 0, 450, 20, 20, 0, 10, 20, 20, lpPixel, &bmpInfo, DIB_RGB_COLORS, SRCCOPY);
-					//////////////////////////////////////////////////////
-
-
-					BitBlt(hdc, 0, 2, iWidth, iHeight, hdc_mem, 0, 0, SRCCOPY);
-				
-				    EndPaint(hwnd, &ps); 
-				
-					break; 
-				case 1: 
-					SetBkMode(hdc, TRANSPARENT); 
-				
-					SetTextColor(hdc, RGB(255, 0, 0)); 
-				//	EndPaint(hwnd, &ps); 
-					break; 
-			} 
-			
-			break; 
-		case WM_SIZE: 
-			
-			break; 
-		case WM_COMMAND: 
-			switch (LOWORD(wp)) { 
-
-
-
-
-
-
-
-
-
-				
-			} 
-			break; 
-		default: 
-			break; 
-	} 
-	SetWindowLong(hStatic, GWL_WNDPROC, (LONG)Org_StaticProc);
-	return (CallWindowProc((WNDPROC)Org_StaticProc, hwnd, msg, wp, lp));
-}
+//CPlayer     *g_pPlayer = NULL;                  // Global player object.
+////
+////  Description: Handles WM_PAINT messages.  This has special behavior in order to handle cases where the
+//// video is paused and resized.
+////
+//void OnPaint(HWND hwnd)
+//{
+//    PAINTSTRUCT ps;
+//    HDC hdc = BeginPaint(hwnd, &ps);
+//
+//    if (g_pPlayer && g_pPlayer->HasVideo())
+//    {
+//        // We have a player with an active topology and a video renderer that can paint the
+//        // window surface - ask the videor renderer (through the player) to redraw the surface.
+//        g_pPlayer->Repaint();
+//    }
+//    else
+//    {
+//        // The player topology hasn't been activated, which means there is no video renderer that 
+//        // repaint the surface.  This means we must do it ourselves.
+//        RECT rc;
+//        GetClientRect(hwnd, &rc);
+//        FillRect(hdc, &rc, (HBRUSH) COLOR_WINDOW);
+//    }
+//    EndPaint(hwnd, &ps);
+//}
+//
+//
+//void OnTimer(void)
+//{
+//    if (g_pPlayer->GetState() == PlayerState_Started)
+//    {
+//        g_pPlayer->DrawSeekbar();
+//    }
+//}
+//
+//void OnOpenFile(HWND parent, bool render)
+//{
+//    OPENFILENAME ofn;       // common dialog box structure
+//    char  szFile[260];       // buffer for file name
+//
+//    // Initialize OPENFILENAME
+//    ZeroMemory(&ofn, sizeof(ofn));
+//    ofn.lStructSize = sizeof(ofn);
+//    ofn.hwndOwner = parent;
+//    ofn.lpstrFile = szFile;
+//    // Set lpstrFile[0] to '\0' so that GetOpenFileName does not 
+//    // use the contents of szFile to initialize itself.
+//    ofn.lpstrFile[0] = '\0';
+//    ofn.nMaxFile = sizeof(szFile);
+//    ofn.lpstrFilter = "All\0*.*\0MP3\0*.mp3\0WMV\0*.wmv\0ASF\0*.asf\0AVI\0*.avi\0";
+//    ofn.nFilterIndex = 1;
+//    ofn.lpstrFileTitle = NULL;
+//    ofn.nMaxFileTitle = 0;
+//    ofn.lpstrInitialDir = NULL;
+//    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+//
+//    // Display the Open dialog box. 
+//    if (GetOpenFileName(&ofn)==TRUE) 
+//    {
+//        // call the player to actually open the file and build the topology
+//        if(g_pPlayer != NULL)
+//        {
+//            if(render)
+//            {
+//                g_pPlayer->OpenURL(ofn.lpstrFile, parent);
+//            }
+//          
+//        }
+//    }
+//}
+//
+//LRESULT CALLBACK StaticProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp){
+//	 
+//	RECT rc, rc2; 
+//	int x, y, i;
+//
+//	static HWND hOpen2 = NULL;  
+//	static HWND hPlay2 = NULL;
+//	static HWND hPause2 = NULL;
+//	static HWND hStop2 = NULL;
+//	static HWND hExit2 = NULL;
+//	
+//	switch (msg) { 
+//		case ID_STATIC:
+//			g_pPlayer = new (std::nothrow) CPlayer(hwnd);
+//
+//			//button
+//				hOpen2 = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Open") , WS_CHILD | WS_VISIBLE , 15, 620 , 70 , 30 , hwnd , (HMENU)ID_OPEN2, ((LPCREATESTRUCT)(lp))->hInstance , NULL);
+//				hPlay2 = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Play") , WS_CHILD | WS_VISIBLE , 90, 620 , 70 , 30 , hwnd , (HMENU)ID_PLAY2, ((LPCREATESTRUCT)(lp))->hInstance , NULL);
+//				hPause2 = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Pause") , WS_CHILD | WS_VISIBLE , 165 , 620 , 70 , 30 , hwnd , (HMENU)ID_PAUSE2, ((LPCREATESTRUCT)(lp))->hInstance , NULL);
+//				hStop2 = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Stop") , WS_CHILD | WS_VISIBLE , 240 , 620 , 70 , 30 , hwnd , (HMENU)ID_STOP2, ((LPCREATESTRUCT)(lp))->hInstance , NULL);
+//				hExit2 = CreateWindowEx(0, TEXT("BUTTON"), TEXT("Exit") , WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON | WS_TABSTOP, 1160, 620 , 70 , 30 , hwnd , (HMENU)ID_EXITT2, ((LPCREATESTRUCT)(lp))->hInstance, NULL);		
+//
+//			break;
+//		case WM_PAINT:
+//	
+//			nPage = TabCtrl_GetCurSel(hTab); 
+//			GetClientRect(hwnd, &rc);
+//			
+//			switch (nPage){ 
+//				case 0: 
+//				OnPaint(hwnd);
+//					break; 
+//				case 1: 
+//					
+//					
+//					break; 
+//			} 
+//			
+//			break; 
+//		case WM_TIMER:
+//        OnTimer();
+//        break;
+//
+//    case WM_ERASEBKGND:
+//        // Suppress window erasing, to reduce flickering while the video is playing.
+//        return 1;
+//		case WM_MOUSEMOVE:
+//        TRACKMOUSEEVENT eventTrack;
+//        eventTrack.cbSize = sizeof( TRACKMOUSEEVENT );
+//        eventTrack.dwFlags = TME_LEAVE;
+//        eventTrack.hwndTrack = hwnd;
+//        TrackMouseEvent(&eventTrack);
+//
+//        g_pPlayer->SetMouseOver(true);
+//        break;
+//
+//    case WM_MOUSELEAVE:
+//        g_pPlayer->SetMouseOver(false);
+//        break;
+//		case WM_SIZE: 
+//			
+//			break; 
+//		case WM_COMMAND: 
+//			switch (LOWORD(wp)) { 
+//				ID_CANCEL:
+//				return (CallWindowProc((WNDPROC)Org_StaticProc, hwnd, msg, wp, lp));
+//
+//
+//
+//
+//
+//
+//
+//
+//				
+//			} 
+//			break; 
+//		default: 
+//			break; 
+//	} 
+//	SetWindowLong(hStatic, GWL_WNDPROC, (LONG)Org_StaticProc);
+//	return 0;
+//}
