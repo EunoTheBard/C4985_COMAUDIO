@@ -56,6 +56,11 @@ BEGIN
         MENUITEM "Download Music",              ID_OPTIONS_DOWNLOADMUSIC
   	    MENUITEM "Microphone",                  ID_OPTIONS_MICROPHONE
     END
+    POPUP "DirectX"
+    BEGIN
+        MENUITEM "MultiPlayer",                 ID_DIRECTX_MULTIPLAYER
+        MENUITEM "Tab Close for MultiPlayer",   ID_DIRECTX_TABCLOSEFORMULTIPLAYER
+    END
     POPUP "Exit"
     BEGIN
         MENUITEM "Exit",                        ID_EXIT_EXIT
