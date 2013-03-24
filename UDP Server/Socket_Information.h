@@ -1,0 +1,13 @@
+#ifndef SOCKET_INFO
+#define SOCKET_INFO
+
+typedef struct _SOCKET_INFORMATION {
+   OVERLAPPED Overlapped;
+   SOCKET Socket;
+   CHAR Buffer[BUFFSIZE];
+   WSABUF DataBuf;
+   DWORD BytesSEND;
+   DWORD BytesRECV;
+} SOCKET_INFORMATION, * LPSOCKET_INFORMATION;
+
+#endif
