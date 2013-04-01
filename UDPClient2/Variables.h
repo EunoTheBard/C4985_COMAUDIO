@@ -11,12 +11,5 @@
 
 
 static HWND hTab = NULL;
-static HWND hDlg = NULL;
-static HWND hDlg2 = NULL;
-static u_short port;
-static char szTo[80];
-static char szTo2[80];
-static u_long lMCAddr;
-static char achMCAddr[MAXADDRSTR];
 
 #endif
